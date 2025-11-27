@@ -19,7 +19,7 @@ export async function getRouteFromOSRM(start, end) {
 }
 
 export async function getElevationData(polyline) {
-  const apiUrl = "http://localhost:8000/route-elevation";
+  const apiUrl = "https://route-elevation-maps.onrender.com/route-elevation/";
 
   try {
     const res = await fetch(`${apiUrl}?poly=${encodeURIComponent(polyline)}`);
