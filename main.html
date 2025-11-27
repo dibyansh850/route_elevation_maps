@@ -4,117 +4,250 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Route Elevation Tester</title>
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
   <style>
     body {
       margin: 0;
       font-family: Arial, sans-serif;
     }
     #map {
-      height: 80vh;
+      height: 100vh;
       width: 100vw;
     }
-    #panel {
+
+    /* Legend + Difficulty */
+    #legendBox {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: white;
       padding: 10px;
-      background: #f7f7f7;
-      border-top: 1px solid #ccc;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 13px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+      z-index: 1000;
+      max-width: 180px;
+    }
+
+    #difficulty {
+      font-weight: bold;
+      font-size: 14px;
+      margin-bottom: 6px;
+    }
+
+    /* Reset button */
+    #resetBtn {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      background: #ff4444;
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      z-index: 1000;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    }
+
+    /* Show JSON button */
+    #jsonBtn {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      z-index: 1000;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    }
+
+    #jsonOutput {
+      display: none;
+      position: absolute;
+      bottom: 60px;
+      left: 10px;
+      background: white;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 12px;
+      width: 300px;
+      height: 200px;
+      overflow: auto;
+      z-index: 1000;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
     }
   </style>
 </head>
 <body>
+
   <div id="map"></div>
-  <div id="panel">
-    <strong>Click two points on the map</strong> → The frontend gets the route from OSRM, then sends only the polyline to your API.
-    <pre id="output"></pre>
+
+  <!-- Reset button -->
+  <button id="resetBtn">Reset</button>
+
+  <!-- Floating Legend + Difficulty -->
+  <div id="legendBox">
+    <div id="difficulty">Difficulty: -</div>
+    <strong>Elevation Grade</strong><br>
+    <span style="color:#d73027;">■■</span> 8%+ uphill<br>
+    <span style="color:#fc8d59;">■■</span> 4–8% uphill<br>
+    <span style="color:#fee08b;">■■</span> 1–4% uphill<br>
+    <span style="color:#4CAF50;">■■</span> Flat (±1%)<br>
+    <span style="color:#abd9e9;">■■</span> 1–4% downhill<br>
+    <span style="color:#74add1;">■■</span> 4–8% downhill<br>
+    <span style="color:#4575b4;">■■</span> 8%+ downhill<br><br>
+
+    <strong>Stats</strong><br>
+    <div id="stats">
+      Ascent: -<br>
+      Descent: -<br>
+      Max Grade: -<br>
+    </div>
   </div>
+
+  <!-- JSON view toggle -->
+  <button id="jsonBtn">Show JSON</button>
+  <pre id="jsonOutput">Generate a route to see JSON data here.</pre>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
     const map = L.map('map').setView([12.935, 77.58], 15);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-    }).addTo(map);
+
+    L.tileLayer(
+      "https://tiles.stadiamaps.com/tiles/stamen_terrain/{z}/{x}/{y}{r}.png",
+      {
+        minZoom: 5,
+        maxZoom: 18,
+        attribution: "© Stadia Maps © Stamen © OSM"
+      }
+    ).addTo(map);
+    
 
     let markers = [];
-    let apiUrl = "http://localhost:8000/route-elevation"; // your API
-    const osrmBase = "https://router.project-osrm.org/route/v1/driving";
+    let routeLayers = [];
+
+    const apiUrl = "http://localhost:8000/route-elevation";
+    const osrmBase = "https://router.project-osrm.org/route/v1/cycling";
+
+    const startIcon = L.icon({
+      iconUrl: "https://cdn-icons-png.flaticon.com/512/684/684908.png",
+      iconSize: [40, 40],
+      iconAnchor: [20, 40]
+    });
+
+    const endIcon = L.icon({
+      iconUrl: "https://cdn-icons-png.flaticon.com/512/149/149060.png",
+      iconSize: [40, 40],
+      iconAnchor: [20, 40]
+    });
+
+    function resetAll() {
+      markers.forEach(m => map.removeLayer(m));
+      markers = [];
+
+      routeLayers.forEach(l => map.removeLayer(l));
+      routeLayers = [];
+
+      document.getElementById("jsonOutput").style.display = "none";
+      document.getElementById("jsonOutput").textContent = "Generate a route to see JSON data here.";
+
+      document.getElementById("difficulty").textContent = "Difficulty: -";
+      document.getElementById("stats").innerHTML = "Ascent: -<br>Descent: -<br>Max Grade: -";
+    }
+
+    document.getElementById("resetBtn").onclick = resetAll;
+
+    document.getElementById("jsonBtn").onclick = () => {
+      const box = document.getElementById("jsonOutput");
+      box.style.display = box.style.display === "none" ? "block" : "none";
+    };
 
     map.on("click", async (e) => {
-      // reset if two markers already placed
-      if (markers.length === 2) {
-        markers.forEach(m => map.removeLayer(m));
-        markers = [];
-        document.querySelector("#output").textContent = "";
-      }
+      if (markers.length === 2) resetAll();
 
-      const marker = L.marker(e.latlng).addTo(map);
+      const icon = markers.length === 0 ? startIcon : endIcon;
+      const marker = L.marker(e.latlng, { icon }).addTo(map);
       markers.push(marker);
 
-      // need 2 points
       if (markers.length !== 2) return;
 
-      const start = markers[0].getLatLng();
-      const end = markers[1].getLatLng();
-      document.querySelector("#output").textContent = "Loading route...";
+      const s = markers[0].getLatLng();
+      const t = markers[1].getLatLng();
 
-      try {
-        // 1. GET ROUTE FROM OSRM (for geometry only)
-        const osrmUrl =
-          `${osrmBase}/${start.lng},${start.lat};${end.lng},${end.lat}` +
-          "?overview=full&geometries=polyline";
+      const osrmURL =
+        `${osrmBase}/${s.lng},${s.lat};${t.lng},${t.lat}?overview=full&geometries=polyline`;
 
-        const osrmRes = await fetch(osrmUrl);
-        const osrmData = await osrmRes.json();
+      const osrmRes = await fetch(osrmURL);
+      const osrmData = await osrmRes.json();
 
-        if (!osrmData.routes || osrmData.routes.length === 0) {
-          document.querySelector("#output").textContent = "OSRM: No route found.";
-          return;
+      if (!osrmData.routes) return;
+
+      const poly = osrmData.routes[0].geometry;
+
+      const apiRes = await fetch(`${apiUrl}?poly=${encodeURIComponent(poly)}`);
+      const data = await apiRes.json();
+
+      document.getElementById("jsonOutput").textContent =
+        JSON.stringify(data, null, 2);
+
+      let totalUp = 0, totalDown = 0, maxSlope = 0;
+
+      if (data.points) {
+        for (let i = 1; i < data.points.length; i++) {
+          const p1 = data.points[i - 1];
+          const p2 = data.points[i];
+
+          const slope = p2.slope_pct || 0;
+
+          if (slope > 0) totalUp += slope;
+          else totalDown += Math.abs(slope);
+
+          maxSlope = Math.max(maxSlope, Math.abs(slope));
+
+          let color = "#4CAF50"; // flat green
+
+          if (slope > 8) color = "#d73027";
+          else if (slope > 4) color = "#fc8d59";
+          else if (slope > 1) color = "#fee08b";
+          else if (slope < -8) color = "#4575b4";
+          else if (slope < -4) color = "#74add1";
+          else if (slope < -1) color = "#abd9e9";
+
+          const segment = L.polyline(
+            [
+              [p1.lat, p1.lon],
+              [p2.lat, p2.lon],
+            ],
+            { color: color, weight: 6, opacity: 0.9 }
+          ).addTo(map);
+
+          routeLayers.push(segment);
         }
-
-        const poly = osrmData.routes[0].geometry;
-
-        document.querySelector("#output").textContent = "Sending polyline to server...";
-
-        // 2. CALL YOUR FASTAPI (polyline-only)
-        const apiRes = await fetch(
-          `${apiUrl}?poly=${encodeURIComponent(poly)}`
-        );
-
-        const data = await apiRes.json();
-        document.querySelector("#output").textContent = JSON.stringify(data, null, 2);
-
-        // 3. DRAW COLORED SLOPE POLYLINE
-        if (data.points) {
-          for (let i = 1; i < data.points.length; i++) {
-            const p1 = data.points[i - 1];
-            const p2 = data.points[i];
-
-            const slope = p2.slope_pct || 0;
-            let color = "blue";
-
-            if (slope > 8) color = "#d73027";       // steep uphill
-            else if (slope > 4) color = "#fc8d59";  // moderate uphill
-            else if (slope > 1) color = "#fee08b";  // mild uphill
-            else if (slope < -8) color = "#4575b4"; // steep downhill
-            else if (slope < -4) color = "#74add1";
-            else if (slope < -1) color = "#abd9e9";
-
-            L.polyline(
-              [
-                [p1.lat, p1.lon],
-                [p2.lat, p2.lon],
-              ],
-              { color: color, weight: 5 }
-            ).addTo(map);
-          }
-        }
-      } catch (err) {
-        document.querySelector("#output").textContent = "Error: " + err;
       }
+
+      // Update stats
+      document.getElementById("stats").innerHTML =
+        `Ascent: ${totalUp.toFixed(1)}%<br>` +
+        `Descent: ${totalDown.toFixed(1)}%<br>` +
+        `Max Grade: ${maxSlope.toFixed(1)}%`;
+
+      // Difficulty score
+      let diff = "Easy";
+      if (totalUp > 20 && totalUp <= 40) diff = "Moderate";
+      else if (totalUp > 40 && totalUp <= 60) diff = "Hard";
+      else if (totalUp > 60) diff = "Brutal";
+
+      document.getElementById("difficulty").textContent =
+        `Difficulty: ${diff}`;
     });
   </script>
 </body>
