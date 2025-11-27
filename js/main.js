@@ -6,13 +6,10 @@ import { startIcon, endIcon } from "./icons.js";
 export const map = L.map('map').setView([12.935, 77.58], 15);
 
 L.tileLayer(
-  "https://tiles.stadiamaps.com/tiles/stamen_terrain/{z}/{x}/{y}{r}.png",
-  {
-    minZoom: 5,
-    maxZoom: 18,
-    attribution: "© Stadia Maps © Stamen © OSM"
-  }
+  "https://cartodb-basemaps-a.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png",
+  { attribution: "© CartoDB © OSM" }
 ).addTo(map);
+
 
 let markers = [];
 
