@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Route Elevation Tester</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- Project CSS -->
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/buttons.css">
+  <link rel="stylesheet" href="css/legend.css">
+  <link rel="stylesheet" href="css/loading.css">
+</head>
+
+<body>
+
+  <!-- Map -->
+  <div id="map"></div>
+
+  <!-- Reset button -->
+  <button id="resetBtn">Reset</button>
+
+  <!-- JSON view toggle -->
+  <button id="jsonBtn">Show JSON</button>
+
+  <!-- JSON Data Panel -->
+  <pre id="jsonOutput">Generate a route to see JSON data here.</pre>
+
+  <!-- Floating Legend + Difficulty -->
+  <div id="legendBox">
+    <div id="difficulty">Difficulty: -</div>
+    <strong>Elevation Grade</strong><br>
+    <span style="color:#d73027;">■■</span> 8%+ uphill<br>
+    <span style="color:#fc8d59;">■■</span> 4–8% uphill<br>
+    <span style="color:#fee08b;">■■</span> 1–4% uphill<br>
+    <span style="color:#4CAF50;">■■</span> Flat (±1%)<br>
+    <span style="color:#abd9e9;">■■</span> 1–4% downhill<br>
+    <span style="color:#74add1;">■■</span> 4–8% downhill<br>
+    <span style="color:#4575b4;">■■</span> 8%+ downhill<br><br>
+
+    <strong>Stats</strong><br>
+    <div id="stats">
+      Ascent: -<br>
+      Descent: -<br>
+      Max Grade: -<br>
+    </div>
+  </div>
+
+  <!-- Finding Route Floating Box -->
+  <div id="findingRoute">Finding route…</div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Main JS entry (ES Modules) -->
+  <script type="module" src="js/main.js"></script>
+
+</body>
+</html>
