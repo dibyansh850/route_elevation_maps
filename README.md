@@ -35,26 +35,27 @@ This tool is built specifically for cyclists who need accurate terrain difficult
 🗂️ Project Structure
 route_elevation_maps/
 │
-├── index.html        ← frontend entry point (deployed to GitHub Pages)
+
+├── index.html        ← frontend entry point (deployed to GitHub Pages)<br/>
 ├── css/              ← frontend styles
-│   ├── styles.css
-│   ├── buttons.css
-│   ├── legend.css
-│   └── loading.css
-│
-├── js/               ← frontend logic (modular ES6)
-│   ├── main.js
-│   ├── api.js
-│   ├── ui.js
-│   ├── render.js
-│   ├── icons.js
-│   └── overlays/
-│
-├── assets/           ← icons/images
-│
-├── backend.py        ← FastAPI backend hosted separately (NOT used by GitHub Pages)
-│
-└── README.md
+│   ├── styles.css<br/>
+│   ├── buttons.css<br/>
+│   ├── legend.css<br/>
+│   └── loading.css<br/>
+│<br/>
+├── js/               ← frontend logic (modular ES6)<br/>
+│   ├── main.js<br/>
+│   ├── api.js<br/>
+│   ├── ui.js<br/>
+│   ├── render.js<br/>
+│   ├── icons.js<br/>
+│   └── overlays/<br/>
+│<br/>
+├── assets/           ← icons/images<br/>
+│<br/>
+├── backend.py        ← FastAPI backend hosted separately (NOT used by GitHub Pages)<br/>
+│<br/>
+└── README.md<br/>
 
 
 Frontend is deployed from repo root, backend is deployed separately.
