@@ -58,22 +58,23 @@ route_elevation_maps/
 └── README.md<br/>
 
 
-Frontend is deployed from repo root, backend is deployed separately.
+Frontend is deployed from repo root, backend is deployed separately.<br/>
 
-⭐ Features
-🎨 Elevation-colored route
+⭐ Features<br/>
+🎨 Elevation-colored route<br/>
 
-Gradient → Color:
+Gradient → Color:<br/>
 
-Slope	Color
-8%+ uphill	🔴 Red
-4–8% uphill	🟠 Orange
-1–4% uphill	🟡 Yellow
-Flat (±1%)	🟩 Green
-1–4% downhill	🔵 Light Blue
-4–8% downhill	🟦 Medium Blue
-8%+ downhill	🔷 Dark Blue
-📊 Statistics
+Slope,	Color<br/>
+8%+ uphill	  🔴 Red<br/>
+4–8% uphill	🟠 Orange<br/>
+1–4% uphill	🟡 Yellow<br/>
+Flat (±1%)	🟩 Green<br/>
+1–4% downhill	🔵 Light Blue<br/>
+4–8% downhill	🟦 Medium Blue<br/>
+8%+ downhill	🔷 Dark Blue<br/>
+<br/>
+📊 Statistics<br/>
 
 Total Ascent (m)
 
