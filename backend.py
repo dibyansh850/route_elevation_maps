@@ -203,24 +203,47 @@ async def route_elevation(poly: str):
     # --------------------------
     # 2. GET ELEVATION POINTS
     # --------------------------
-    locations = [{"latitude": lat, "longitude": lon} for lat, lon in coords]
+    import asyncio
+    elevations = []
+    try:
+        chunk_size = 100
+        chunks = [coords[i:i + chunk_size] for i in range(0, len(coords), chunk_size)]
+        
+        async def fetch_chunk(chunk):
+            lats = ",".join(f"{c[0]:.6f}" for c in chunk)
+            lons = ",".join(f"{c[1]:.6f}" for c in chunk)
+            url = f"https://api.open-meteo.com/v1/elevation?latitude={lats}&longitude={lons}"
+            async with httpx.AsyncClient(timeout=10) as client:
+                r = await client.get(url)
+                if r.status_code == 200:
+                    return r.json().get("elevation", [])
+                else:
+                    raise Exception(f"Open-Meteo chunk failed with status {r.status_code}")
 
-    async with httpx.AsyncClient(timeout=30) as client:
-        elev_r = await client.post(ELEVATION_URL, json={"locations": locations})
+        results = await asyncio.gather(*(fetch_chunk(c) for c in chunks))
+        for res in results:
+            elevations.extend(res)
+    except Exception as e:
+        # Fallback to Open-Elevation if Open-Meteo fails
+        try:
+            locations = [{"latitude": lat, "longitude": lon} for lat, lon in coords]
+            async with httpx.AsyncClient(timeout=30) as client:
+                elev_r = await client.post(ELEVATION_URL, json={"locations": locations})
+            if elev_r.status_code == 200:
+                results = elev_r.json().get("results", [])
+                elevations = [r.get("elevation") for r in results]
+        except Exception:
+            pass
 
-    if elev_r.status_code != 200:
-        raise HTTPException(500, "Elevation API error")
-
-    elevation_data = elev_r.json().get("results", [])
-    if len(elevation_data) < len(coords):
-        elevation_data.extend([{"elevation": None}] * (len(coords) - len(elevation_data)))
+    # Ensure elevations matches coords length
+    if len(elevations) < len(coords):
+        elevations.extend([None] * (len(coords) - len(elevations)))
 
     # --------------------------
     # 3. BUILD BASE POINT LIST
     # --------------------------
     points = []
-    for (lat, lon), ed in zip(coords, elevation_data):
-        elev = ed.get("elevation")
+    for (lat, lon), elev in zip(coords, elevations):
         points.append({"lat": lat, "lon": lon, "elev_m": elev})
 
     # --------------------------
